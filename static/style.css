@@ -1,0 +1,365 @@
+/* LitKG Assistant — 学术蓝主题样式（MVP-2 增强版）*/
+
+/* ========== 全局字体 ========== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #2c3e50;
+}
+
+/* ========== 主色调变量 ========== */
+:root {
+    --primary: #2c3e50;
+    --primary-light: #3498db;
+    --accent: #2ecc71;
+    --warning: #e67e22;
+    --danger: #e74c3c;
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --border: #e0e0e0;
+    --text: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --user-bubble: #e1f5fe;
+    --assistant-bubble: #f0f4f8;
+}
+
+/* ========== 主内容区 ========== */
+.main .block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+    max-width: 1200px;
+}
+
+/* ========== 标题 ========== */
+h1 {
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+    font-size: 1.8rem !important;
+    border-bottom: 3px solid var(--primary-light);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+    font-size: 1.4rem !important;
+}
+
+h3 {
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+    font-size: 1.15rem !important;
+}
+
+/* ========== 按钮 ========== */
+.stButton > button {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.2rem !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(52, 152, 219, 0.35) !important;
+}
+
+.stButton > button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2) !important;
+}
+
+/* Secondary button (outline style) */
+div[data-testid="stButton"] button[kind="secondary"] {
+    background: transparent !important;
+    color: #3498db !important;
+    border: 2px solid #3498db !important;
+    box-shadow: none !important;
+}
+
+div[data-testid="stButton"] button[kind="secondary"]:hover {
+    background: #3498db !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Danger button (delete) */
+div[data-testid="stButton"] button[kind="danger"] {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* ========== 论文卡片（papers 页面） ========== */
+.paper-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: all 0.25s ease;
+}
+
+.paper-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    border-color: var(--primary-light);
+}
+
+.paper-card .paper-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--primary);
+    margin: 0 0 0.3rem 0;
+}
+
+.paper-card .paper-meta {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.paper-card .paper-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+/* ========== 聊天气泡（qa 页面） ========== */
+/* 用户消息（右对齐） */
+[data-testid="stChatMessage"]:nth-child(odd) {
+    background: var(--user-bubble) !important;
+    border-radius: 12px 12px 0 12px !important;
+    margin-left: 2rem;
+}
+
+/* 助手消息（左对齐） */
+[data-testid="stChatMessage"]:nth-child(even) {
+    background: var(--assistant-bubble) !important;
+    border-radius: 12px 12px 12px 0 !important;
+    margin-right: 2rem;
+    border-left: 3px solid var(--primary-light);
+}
+
+/* 聊天输入框 */
+[data-testid="stChatInput"] textarea {
+    border-radius: 10px !important;
+    border: 2px solid var(--border) !important;
+    padding: 0.7rem 1rem !important;
+}
+
+[data-testid="stChatInput"] textarea:focus {
+    border-color: var(--primary-light) !important;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15) !important;
+}
+
+/* ========== 示例问题卡片（可点击） ========== */
+.example-question {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.88rem;
+    color: var(--primary-light);
+}
+
+.example-question:hover {
+    background: #e1f5fe;
+    border-color: var(--primary-light);
+    transform: translateX(4px);
+}
+
+/* ========== 卡片容器 ========== */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+/* ========== 输入框 ========== */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stSelectbox > div > div > div {
+    border-radius: 10px !important;
+    border: 2px solid var(--border) !important;
+    padding: 0.7rem 1rem !important;
+    transition: border-color 0.3s !important;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stSelectbox > div > div > div:focus {
+    border-color: var(--primary-light) !important;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15) !important;
+}
+
+/* ========== 侧边栏 ========== */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%) !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: #ecf0f1 !important;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: white !important;
+    border-bottom-color: rgba(255,255,255,0.2) !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown {
+    color: #bdc3c7 !important;
+}
+
+/* 侧边栏导航 radio 按钮 */
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.8rem !important;
+    margin-bottom: 0.3rem !important;
+    transition: all 0.2s !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: rgba(255,255,255,0.15) !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"] {
+    background: rgba(52, 152, 219, 0.3) !important;
+    border-left: 3px solid #3498db !important;
+}
+
+/* ========== 指标卡片 (Metric) ========== */
+[data-testid="stMetric"] {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+[data-testid="stMetric"] label {
+    color: var(--text-secondary) !important;
+    font-size: 0.85rem !important;
+}
+
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+    font-size: 1.8rem !important;
+}
+
+/* ========== 进度条 ========== */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #3498db, #2ecc71) !important;
+    border-radius: 10px !important;
+}
+
+.stProgress > div > div {
+    background: #e8e8e8 !important;
+    border-radius: 10px !important;
+}
+
+/* ========== 状态框 ========== */
+[data-testid="stAlert"] {
+    border-radius: 10px !important;
+    border: none !important;
+}
+
+[data-testid="stAlert"][data-kind="success"] {
+    background: #eafaf1 !important;
+    color: #1e8449 !important;
+}
+
+[data-testid="stAlert"][data-kind="error"] {
+    background: #fdedec !important;
+    color: #c0392b !important;
+}
+
+[data-testid="stAlert"][data-kind="warning"] {
+    background: #fef9e7 !important;
+    color: #7d6608 !important;
+}
+
+[data-testid="stAlert"][data-kind="info"] {
+    background: #eaf2fb !important;
+    color: #2471a3 !important;
+}
+
+/* ========== 文件上传区域 ========== */
+[data-testid="stFileUploader"] {
+    border: 2px dashed var(--border) !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    transition: border-color 0.3s !important;
+}
+
+[data-testid="stFileUploader"]:hover {
+    border-color: var(--primary-light) !important;
+}
+
+/* ========== 表格 ========== */
+[data-testid="stTable"] table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+
+[data-testid="stTable"] th {
+    background: #f0f4f8 !important;
+    color: var(--primary) !important;
+    border-bottom: 2px solid var(--primary-light) !important;
+    padding: 8px !important;
+}
+
+[data-testid="stTable"] td {
+    border-bottom: 1px solid #eee !important;
+    padding: 6px 8px !important;
+}
+
+/* ========== 展开面板 ========== */
+[data-testid="stExpander"] {
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] > summary {
+    background: #f8f9fa !important;
+    padding: 0.6rem 1rem !important;
+    font-weight: 500 !important;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    [data-testid="stChatMessage"]:nth-child(odd) {
+        margin-left: 0.5rem;
+    }
+    
+    [data-testid="stChatMessage"]:nth-child(even) {
+        margin-right: 0.5rem;
+    }
+}

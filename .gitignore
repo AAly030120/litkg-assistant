@@ -1,0 +1,42 @@
+# 环境变量 & 密钥（绝对不能提交）
+.env
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# 运行时数据（云端每次启动清空，本地勿提交）
+data/papers/*.pdf
+data/chunks/
+data/vector_db/
+data/kg.json
+data/papers_index.json
+
+# 日志
+logs/
+litkg.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Debug & temp scripts
+debug_blank.py
+diagnose.py
+check_pages.py
+test_imports.py
+verify_no_blank.py
+=*
+
+# OS
+.DS_Store
+Thumbs.db

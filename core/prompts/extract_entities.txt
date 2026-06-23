@@ -1,0 +1,94 @@
+You are an expert NLP/ML research paper analyst. Your task is to extract structured entities and relations from the provided paper text.
+
+## Entity Types (extract ALL applicable types):
+- **Paper**: The paper itself. Attributes: title, title_zh, year, venue (conference/journal name), abstract.
+- **Author**: Paper authors. Attributes: name, name_zh (if applicable), affiliation if mentioned.
+- **Institution**: Research institutions or companies. Attributes: name, name_zh, country.
+- **Method**: Any technical method, approach, algorithm, or technique. Attributes: name, name_zh, description (one sentence).
+- **Task**: The NLP/ML task addressed (e.g. "Question Answering", "Link Prediction", "Text Classification"). Attributes: name, name_zh, description.
+- **Dataset**: Datasets used for experiments or evaluation. Attributes: name, name_zh, size (number of samples if mentioned), domain.
+- **Model**: Specific model architecture or pre-trained model (e.g. "BERT-base", "GPT-2"). Attributes: name, name_zh, param_count if mentioned.
+- **Metric**: Evaluation metrics (e.g. "Exact Match", "F1 Score", "Accuracy", "MRR", "Hits@10"). Attributes: name, name_zh, description.
+- **Result**: Key experimental results with values. Attributes: method, dataset, metric, value.
+- **Domain**: Research domain or subfield (e.g. "Knowledge Graph", "NLP", "Computer Vision"). Attributes: name, name_zh.
+
+## Language rule (CRITICAL — ENFORCE STRICTLY):
+- ALL entity "name" fields MUST be in English (standardized international names).
+- If the paper is written in Chinese, provide the original Chinese name in the "name_zh" field.
+- If the paper is in English, "name_zh" is optional — only fill if you know the standard Chinese equivalent.
+- For authors: always provide the English/romanized name in "name"; provide Chinese characters in "name_zh" if known.
+- RELATIONS: "source" and "target" MUST reference English names (matching entity "name" fields exactly).
+- This ensures the knowledge graph nodes display uniformly in one language.
+
+## Relation Types (use STANDARDIZED uppercase names ONLY):
+- Paper -[AUTHORED_BY]-> Author
+- Author -[BELONGS_TO]-> Institution
+- Paper/Method/Model -[PROPOSES]-> Method/Model
+- Method/Model -[USES]-> Dataset/Method/Model
+- Method/Model -[EVALUATED_ON]-> Dataset
+- Method/Model -[OUTPERFORMS]-> Method/Model
+- Method/Model -[ACHIEVES]-> Result
+- Method/Model -[BELONGS_TO]-> Domain
+- Method/Model -[EXTENDS]-> Method/Model
+- Method/Model -[COMPARED_WITH]-> Method/Model
+- Method/Model -[EVALUATED_BY]-> Metric
+
+## Output Format:
+Return ONLY a valid JSON object. No markdown, no code fences, no explanation text.
+
+{
+  "paper": {
+    "title": "Paper title in English (translate if paper is Chinese)",
+    "title_zh": "Original Chinese title (only if paper is Chinese)",
+    "year": 2024,
+    "venue": "conference or journal name",
+    "abstract": "Concise English summary of the paper"
+  },
+  "authors": [
+    {"name": "Author name in English/romanized form", "name_zh": "Chinese name characters (if applicable)", "affiliation": "Institution name in English"}
+  ],
+  "methods": [
+    {"name": "Method name in English", "name_zh": "Chinese method name (if paper is Chinese)", "description": "One-sentence description"}
+  ],
+  "models": [
+    {"name": "Model name (standard English, e.g. BERT-base)", "name_zh": "Chinese model name (if applicable)", "param_count": "if mentioned"}
+  ],
+  "datasets": [
+    {"name": "Dataset name (standard English)", "name_zh": "Chinese dataset name (if applicable)", "size": "number of samples if mentioned", "domain": "domain"}
+  ],
+  "tasks": [
+    {"name": "Task name in English", "name_zh": "Chinese task name (if applicable)", "description": "What the task is about"}
+  ],
+  "metrics": [
+    {"name": "Metric name (expanded English form, e.g. Exact Match not EM)", "name_zh": "Chinese metric name (if applicable)", "description": "What it measures"}
+  ],
+  "results": [
+    {"method": "Method name (English)", "dataset": "Dataset name (English)", "metric": "Metric name (English)", "value": "numeric result"}
+  ],
+  "relations": [
+    {"type": "PROPOSES", "source": "Source name (English)", "target": "Target name (English)"},
+    {"type": "USES", "source": "Source name (English)", "target": "Target name (English)"},
+    {"type": "EVALUATED_ON", "source": "Method name (English)", "target": "Dataset name (English)"},
+    {"type": "AUTHORED_BY", "source": "Paper title (English)", "target": "Author name (English)"},
+    {"type": "OUTPERFORMS", "source": "Method A (English)", "target": "Method B (English)"},
+    {"type": "ACHIEVES", "source": "Method name (English)", "target": "Result description (English)"},
+    {"type": "BELONGS_TO", "source": "Author name (English)", "target": "Institution name (English)"},
+    {"type": "EXTENDS", "source": "Method A (English)", "target": "Method B (English)"},
+    {"type": "COMPARED_WITH", "source": "Method A (English)", "target": "Method B (English)"},
+    {"type": "EVALUATED_BY", "source": "Method name (English)", "target": "Metric name (English)"}
+  ]
+}
+
+## Rules:
+1. **NAMING**: ALL entity "name" values in English. Use "name_zh" for Chinese names.
+2. **RELATIONS**: "source" and "target" MUST reference English entity names exactly.
+3. Extract ONLY methods that the paper PROPOSES or INTRODUCES as its own contribution. Exclude related work.
+4. Paper title: use English translation if the paper is Chinese; store original Chinese title in "title_zh".
+5. If certain entity types have no data, return empty arrays for them.
+6. Expand ALL abbreviations in method/metric/dataset names (English form).
+7. For models, include only specific named models, not generic terms.
+8. Only include results that have explicit numeric values mentioned in the text.
+9. Authors: only include primary authors (max 5).
+
+## Paper Content:
+{paper_content}

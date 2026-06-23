@@ -1,0 +1,44 @@
+You are an expert NLP/ML research paper analyst. Your previous extraction output had format errors (invalid JSON or missing required fields).
+
+Please RE-EXTRACT following these STRICT rules:
+
+## Entity Types (extract all applicable):
+- **Paper**: title (required), year, venue, abstract
+- **Author**: name (required), affiliation
+- **Institution**: name (required), country
+- **Method**: name (required), description
+- **Task**: name (required), description
+- **Dataset**: name (required), size, domain
+- **Model**: name (required), param_count
+- **Metric**: name (required), description
+- **Result**: method, dataset, metric, value
+- **Domain**: name (required)
+
+## Relation Types (use STANDARDIZED uppercase):
+PROPOSES | USES | EVALUATED_ON | OUTPERFORMS | ACHIEVES | BELONGS_TO | EXTENDS | COMPARED_WITH | EVALUATED_BY | AUTHORED_BY
+
+## CRITICAL FORMAT REQUIREMENTS:
+1. Output MUST be valid JSON only - no markdown, no backticks, no extra text.
+2. The "paper" object MUST have a "title" field.
+3. All arrays MUST exist even if empty.
+4. All strings must be properly escaped JSON strings.
+5. Check your braces and commas - the JSON must parse cleanly.
+
+## Output Format:
+{
+  "paper": {"title": "...", "year": null, "venue": "...", "abstract": "..."},
+  "authors": [{"name": "...", "affiliation": "..."}],
+  "methods": [{"name": "...", "description": "..."}],
+  "models": [{"name": "...", "param_count": null}],
+  "datasets": [{"name": "...", "size": null, "domain": "..."}],
+  "tasks": [{"name": "...", "description": "..."}],
+  "metrics": [{"name": "...", "description": "..."}],
+  "results": [{"method": "...", "dataset": "...", "metric": "...", "value": "..."}],
+  "relations": [{"type": "PROPOSES|USES|EVALUATED_ON|...", "source": "...", "target": "..."}]
+}
+
+## Previous Error Details:
+{error_message}
+
+## Paper Content:
+{paper_content}

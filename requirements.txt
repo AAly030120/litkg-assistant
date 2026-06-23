@@ -1,0 +1,39 @@
+# ============================================================
+# LitKG Assistant - MVP-1 依赖
+# ============================================================
+# 安装：pip install -r requirements.txt
+# 推荐使用 venv 隔离环境
+
+# --- LLM API 调用 ---
+openai>=1.30.0
+
+# --- 容错与重试 ---
+tenacity>=8.2.0
+
+# --- PDF 解析 ---
+PyMuPDF>=1.23.0
+
+# --- 数据结构校验 ---
+pydantic>=2.5.0
+
+# --- 知识图谱（内存图 + JSON） ---
+networkx>=3.2.0
+
+# --- 环境变量管理 ---
+python-dotenv>=1.0.0
+
+# --- 向量存储（MVP-1 ChromaDB）---
+chromadb>=0.5.0
+
+# --- Web UI（MVP-1 Streamlit）---
+streamlit>=1.35.0
+pandas>=2.0.0  # 数据展示（论文列表）
+
+# --- 图谱可视化（MVP-2 PyVis / Neo4j）---
+pyvis>=0.3.0
+neo4j>=5.14.0  # Neo4j Python 驱动（可选）
+
+# --- 工具（可选）---
+# tiktoken>=0.5.0          # token 计数
+# sentence-transformers>=2.2.0  # 本地 embedding（可选）
+
