@@ -134,7 +134,7 @@ python main.py --pdf path/to/paper.pdf
 - **成本意识**：用 Chunk 级 SHA256 去重做增量更新，把 API 成本压降 60%+，体现工程与产品的平衡。
 - **可信赖性设计**：三级实体消歧解决同名异义，Triple 溯源为低置信结论标注「待验证」，把「AI 幻觉」变成可审计的产品特性。
 
-> 在线 Demo：（部署 Streamlit Community Cloud 后填入 URL，如 https://litkg-assistant.streamlit.app ）
+> 🚀 在线 Demo：https://litkg-assistant-yprhhcyglsbuq9cxcewyah.streamlit.app/
 
 ## License
 
