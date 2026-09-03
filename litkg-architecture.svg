@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 580" font-family="'PingFang SC','Microsoft YaHei',-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrowW" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="860" height="580" fill="#FFFFFF"/>
+
+  <!-- 标题 -->
+  <text x="430" y="38" text-anchor="middle" font-size="23" font-weight="800" fill="#0F172A">LitKG Assistant · 产品 / 技术架构</text>
+  <text x="430" y="64" text-anchor="middle" font-size="13" fill="#64748B">上传论文 PDF → 自动构建知识图谱 → GraphRAG 融合问答，让文献可探索、可问答、可溯源</text>
+
+  <!-- 用户 / UI 入口 -->
+  <rect x="8" y="100" width="160" height="48" rx="12" fill="#E0F2FE" stroke="#0EA5E9" stroke-width="1.5"/>
+  <text x="88" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#075985">👤 科研人员</text>
+  <text x="88" y="139" text-anchor="middle" font-size="11" fill="#0369A1">Streamlit Web UI</text>
+  <line x1="88" y1="148" x2="88" y2="190" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- 主流程 5 个盒子 -->
+  <!-- Box1 PDF 上传 -->
+  <rect x="24" y="190" width="128" height="66" rx="12" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="88" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#92400E">📄 PDF 上传</text>
+  <text x="88" y="236" text-anchor="middle" font-size="11" fill="#B45309">原始文献</text>
+
+  <!-- Box2 解析 -->
+  <rect x="176" y="190" width="128" height="66" rx="12" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="240" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">🔍 PDF 解析</text>
+  <text x="240" y="236" text-anchor="middle" font-size="11" fill="#1D4ED8">PyMuPDF · 文本块</text>
+
+  <!-- Box3 LLM 抽取 -->
+  <rect x="328" y="190" width="128" height="66" rx="12" fill="#EDE9FE" stroke="#8B5CF6" stroke-width="1.5"/>
+  <text x="392" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#5B21B6">🧠 LLM 抽取</text>
+  <text x="392" y="236" text-anchor="middle" font-size="11" fill="#6D28D9">实体 / 关系</text>
+
+  <!-- Box4 图谱 -->
+  <rect x="480" y="190" width="128" height="66" rx="12" fill="#FCE7F3" stroke="#EC4899" stroke-width="1.5"/>
+  <text x="544" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#9D174D">🕸️ 知识图谱</text>
+  <text x="544" y="236" text-anchor="middle" font-size="11" fill="#BE185D">NetworkX · 消歧</text>
+
+  <!-- Box5 问答 -->
+  <rect x="632" y="190" width="128" height="66" rx="12" fill="#DCFCE7" stroke="#10B981" stroke-width="1.5"/>
+  <text x="696" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">💬 GraphRAG</text>
+  <text x="696" y="236" text-anchor="middle" font-size="11" fill="#15803D">向量 + 图谱融合</text>
+
+  <!-- 主流程箭头 -->
+  <line x1="152" y1="223" x2="174" y2="223" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="304" y1="223" x2="326" y2="223" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="456" y1="223" x2="478" y2="223" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="608" y1="223" x2="630" y2="223" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- 增量更新注记 -->
+  <text x="240" y="278" text-anchor="middle" font-size="10.5" fill="#94A3B8">↳ Chunks · SHA256 去重 / 增量更新</text>
+
+  <!-- 结果盒子 -->
+  <rect x="591" y="300" width="210" height="56" rx="12" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.5"/>
+  <text x="696" y="324" text-anchor="middle" font-size="13" font-weight="700" fill="#15803D">答案 + Triple 溯源</text>
+  <text x="696" y="343" text-anchor="middle" font-size="11" fill="#16A34A">低置信度结论标注「待验证」</text>
+  <line x1="696" y1="256" x2="696" y2="298" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- 容错层 -->
+  <rect x="270" y="382" width="250" height="52" rx="12" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="395" y="404" text-anchor="middle" font-size="13" font-weight="700" fill="#991B1B">🛡 三级 Fallback 容错</text>
+  <text x="395" y="423" text-anchor="middle" font-size="11" fill="#B91C1C">LLM 重试 → 降级模板 → 安全拒答</text>
+  <line x1="392" y1="256" x2="392" y2="380" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowW)"/>
+
+  <!-- 产品价值 banner -->
+  <rect x="120" y="472" width="620" height="58" rx="14" fill="#F1F5F9" stroke="#64748B" stroke-width="1.5"/>
+  <text x="430" y="496" text-anchor="middle" font-size="13" font-weight="800" fill="#334155">💡 产品价值</text>
+  <text x="430" y="517" text-anchor="middle" font-size="12" fill="#475569">多跳推理 · 跨文档知识关联 · API 成本 ↓60% · 同名异义实体消歧 &gt;92%</text>
+
+  <!-- 图例 -->
+  <text x="24" y="560" font-size="10.5" fill="#94A3B8">技术栈：Python · Streamlit · PyMuPDF · OpenAI API · NetworkX · ChromaDB · Pydantic</text>
+</svg>
