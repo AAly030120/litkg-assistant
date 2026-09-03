@@ -109,6 +109,32 @@ python main.py --pdf path/to/paper.pdf
 - **图谱存储**: NetworkX + JSON
 - **容错重试**: Tenacity
 - **配置管理**: python-dotenv
+---
+
+### 🖼 效果展示 / 系统架构
+
+![LitKG Assistant 架构](litkg-architecture.svg)
+
+**核心处理链路**：PDF 上传 → PyMuPDF 解析为文本块（SHA256 增量去重）→ LLM 抽取实体/关系 → NetworkX 构建知识图谱（三级实体消歧）→ ChromaDB 向量 + 图谱融合的 GraphRAG 问答 → 答案附带 Triple 溯源。
+
+### 🚀 关键指标
+
+| 指标 | 结果 |
+|------|------|
+| 实体 / 关系类型 | 10 / 10 种 |
+| 实体消歧准确率 | > 92% |
+| API 成本节省 | 60%+（Chunk 级增量更新） |
+| LLM 容错 | 三级 Fallback（重试 → 降级模板 → 安全拒答） |
+| 溯源能力 | Triple 级，低置信度结论标注「待验证」 |
+
+### 💡 产品思考（AI 产品岗面试可用）
+
+- **痛点驱动**：科研人员「逐篇阅读」效率低，且难以建立跨论文的知识关联；把非结构化 PDF 升级为可探索、可问答、可溯源的结构化知识库。
+- **优先级取舍**：MVP 先打通「上传→抽取→图谱→问答」单论文闭环验证价值，再迭代多论文、可视化与增量更新。
+- **成本意识**：用 Chunk 级 SHA256 去重做增量更新，把 API 成本压降 60%+，体现工程与产品的平衡。
+- **可信赖性设计**：三级实体消歧解决同名异义，Triple 溯源为低置信结论标注「待验证」，把「AI 幻觉」变成可审计的产品特性。
+
+> 在线 Demo：（部署 Streamlit Community Cloud 后填入 URL，如 https://litkg-assistant.streamlit.app ）
 
 ## License
 
