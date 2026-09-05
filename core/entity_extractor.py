@@ -7,6 +7,7 @@ MVP-0: 仅抽取 3 种实体 + 2 种关系
 import json
 import logging
 import re
+import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -15,6 +16,7 @@ from pydantic import BaseModel, Field, ValidationError
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
@@ -43,12 +45,14 @@ class _PaperItem(BaseModel):
     year: Any = None
     venue: str = ""
     abstract: str = ""
+    description: str = ""
 
 
 class _AuthorItem(BaseModel):
     name: str
     name_zh: str = ""
     affiliation: str = ""
+    description: str = ""
 
 
 class _MethodItem(BaseModel):
@@ -61,6 +65,7 @@ class _ModelItem(BaseModel):
     name: str
     name_zh: str = ""
     param_count: Any = None
+    description: str = ""
 
 
 class _DatasetItem(BaseModel):
@@ -68,6 +73,7 @@ class _DatasetItem(BaseModel):
     name_zh: str = ""
     size: Any = None
     domain: str = ""
+    description: str = ""
 
 
 class _TaskItem(BaseModel):
@@ -87,12 +93,14 @@ class _ResultItem(BaseModel):
     dataset: str = ""
     metric: str = ""
     value: str = ""
+    description: str = ""
 
 
 class _RelationItem(BaseModel):
     type: str  # PROPOSES | USES | EVALUATED_ON | OUTPERFORMS | ACHIEVES | BELONGS_TO | EXTENDS | COMPARED_WITH | EVALUATED_BY | AUTHORED_BY
     source: str
     target: str
+    description: str = ""
 
 
 class _ExtractOutput(BaseModel):
@@ -134,11 +142,52 @@ def _get_client() -> OpenAI:
 
 
 # ============================================================
-# LLM 调用（含 tenacity 重试）
+# LLM 调用统一容错与并发控制（MVP-2 · 说明书 6.9）
 # ============================================================
 
+# 全局并发上限：超出后自动排队等待，避免触发厂商 RPM/TPM 限制
+_LLM_SEMAPHORE = threading.Semaphore(max(1, int(settings.LLM_MAX_CONCURRENCY or 3)))
+
+
+class LLMFatalError(RuntimeError):
+    """不可重试的致命错误（401/402/403/404）——重试无意义，需用户介入"""
+
+
+def _classify_llm_error(error: Exception) -> Exception:
+    """
+    把 OpenAI 兼容 SDK 的异常映射为带错误码的业务异常（说明书 6.9 错误码表）。
+
+    可重试错误 → 普通 RuntimeError，交由 tenacity 指数退避重试
+    致命错误   → LLMFatalError，不重试，直接上报用户
+    """
+    msg = str(error)
+    low = msg.lower()
+    name = type(error).__name__.lower()
+
+    # 401 / 鉴权失败
+    if "401" in msg or "unauthorized" in low or "authentication" in name or "invalid api" in low:
+        return LLMFatalError("ERR_AUTH_401: API Key 无效或已过期，请检查 .env 中的 LLM_API_KEY")
+    # 403 / 无权限
+    if "403" in msg or "forbidden" in low:
+        return LLMFatalError("ERR_AUTH_401: 无权限访问该模型，请检查 API Key 权限与模型名")
+    # 402 / 配额耗尽
+    if "402" in msg or "insufficient_quota" in low or "quota" in low or "balance" in low:
+        return LLMFatalError("ERR_QUOTA_402: API 余额不足或配额用尽，请充值后重试")
+    # 404 / 模型不存在
+    if "404" in msg or "not found" in low:
+        return LLMFatalError("ERR_MODEL_404: 模型不存在或不可用，请检查 LLM_MODEL_NAME")
+    # 429 / 限流（可重试）
+    if "429" in msg or "rate limit" in low or "rate_limit" in low:
+        return RuntimeError(f"ERR_RATE_429: 触发限流，正在重试 — {msg}")
+    # 超时（可重试）
+    if "timeout" in low or "timed out" in low:
+        return RuntimeError(f"ERR_TIMEOUT: 请求超时，正在重试 — {msg}")
+    return error
+
+
 @retry(
-    retry=retry_if_exception_type((Exception,)),
+    # 致命错误（401/402/403/404）不重试；其余（429/5xx/超时）指数退避重试
+    retry=retry_if_not_exception_type(LLMFatalError),
     stop=stop_after_attempt(settings.LLM_MAX_RETRIES),
     wait=wait_exponential(multiplier=1, min=2, max=30),
     reraise=True,
@@ -149,8 +198,11 @@ def _call_llm(
     force_json: bool = False,  # 默认关闭，很多兼容 API 不支持 json_object
 ) -> str:
     """
-    调用 LLM API，带自动重试。
-    处理 429 (Rate Limit) 和超时错误。
+    调用 LLM API，带并发控制与自动重试。
+
+    并发: 由全局信号量限制为 settings.LLM_MAX_CONCURRENCY（默认 3）
+    重试: 429/5xx/超时 → 指数退避 2s→4s→8s（上限 30s）
+          401/402/403/404 → 直接抛 LLMFatalError，不做无谓重试
 
     参数:
         force_json: 是否启用 response_format json_object（默认 False）
@@ -166,7 +218,12 @@ def _call_llm(
     if force_json:
         kwargs["response_format"] = {"type": "json_object"}
 
-    response = client.chat.completions.create(**kwargs)
+    try:
+        with _LLM_SEMAPHORE:
+            response = client.chat.completions.create(**kwargs)
+    except Exception as e:
+        raise _classify_llm_error(e)
+
     content = response.choices[0].message.content
     return content.strip() if content else ""
 
@@ -485,6 +542,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
         e = Entity(
             entity_type="Paper",
             name=paper_title,
+            description=output.paper.description or output.paper.abstract or paper_title,
             source_paper_id=paper_id,
             properties=props,
         )
@@ -500,6 +558,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
             e = Entity(
                 entity_type="Author",
                 name=a.name.strip(),
+                description=a.description,
                 source_paper_id=paper_id,
                 properties=props,
             )
@@ -515,6 +574,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
             e = Entity(
                 entity_type="Method",
                 name=m.name.strip(),
+                description=m.description,
                 source_paper_id=paper_id,
                 properties=props,
             )
@@ -524,12 +584,13 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
     # Model 实体
     for m in output.models:
         if m.name and m.name.strip():
-            props = {"param_count": m.param_count}
+            props = {"param_count": m.param_count, "description": m.description}
             if m.name_zh:
                 props["name_zh"] = m.name_zh
             e = Entity(
                 entity_type="Model",
                 name=m.name.strip(),
+                description=m.description,
                 source_paper_id=paper_id,
                 properties=props,
             )
@@ -539,12 +600,13 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
     # Dataset 实体
     for d in output.datasets:
         if d.name and d.name.strip():
-            props = {"size": d.size, "domain": d.domain}
+            props = {"size": d.size, "domain": d.domain, "description": d.description}
             if d.name_zh:
                 props["name_zh"] = d.name_zh
             e = Entity(
                 entity_type="Dataset",
                 name=d.name.strip(),
+                description=d.description,
                 source_paper_id=paper_id,
                 properties=props,
             )
@@ -560,6 +622,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
             e = Entity(
                 entity_type="Task",
                 name=t.name.strip(),
+                description=t.description,
                 source_paper_id=paper_id,
                 properties=props,
             )
@@ -575,6 +638,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
             e = Entity(
                 entity_type="Metric",
                 name=m.name.strip(),
+                description=m.description,
                 source_paper_id=paper_id,
                 properties=props,
             )
@@ -588,6 +652,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
             e = Entity(
                 entity_type="Result",
                 name=name.strip(),
+                description=r.description,
                 source_paper_id=paper_id,
                 properties={
                     "method": r.method, "dataset": r.dataset,
@@ -644,6 +709,7 @@ def extract_entities(chunks: List[TextChunk]) -> ExtractionResult:
                 target_entity_id=target_id,
                 source_entity_name=r.source.strip(),
                 target_entity_name=r.target.strip(),
+                description=r.description,
                 source_paper_id=paper_id,
                 llm_model=settings.LLM_MODEL_NAME,
                 prompt_version=settings.PROMPT_VERSION,

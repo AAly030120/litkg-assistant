@@ -18,6 +18,7 @@ data/chunks/
 data/vector_db/
 data/kg.json
 data/papers_index.json
+data/communities.json
 
 # 日志
 logs/

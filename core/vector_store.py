@@ -11,10 +11,10 @@ MVP-1: 集成 ChromaDB，实现论文 chunk 的向量化存储和相似度检索
 import logging
 import hashlib
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from config.settings import settings
-from core.models import TextChunk, PaperMeta
+from core.models import TextChunk, PaperMeta, compute_hash
 
 logger = logging.getLogger(__name__)
 
@@ -135,23 +135,28 @@ class VectorStore:
         metadatas = []
         embeddings = []
 
-        for chunk in chunks:
-            # 生成唯一 ID（基于 chunk_id 或内容哈希）
-            chunk_id = chunk.chunk_id or self._hash_content(chunk.content)
+        for idx, chunk in enumerate(chunks):
+            # 稳定 ID（说明书 3.4: "paper_id::chunk_index"），保证重复写入幂等
+            chunk_id = chunk.chunk_id or f"{chunk.paper_id}::{idx}"
             ids.append(chunk_id)
 
             # 文档内容
             documents.append(chunk.content)
 
-            # 元数据（包含论文来源信息）
+            # 元数据（补全 chunk_hash / extraction_status，支撑增量去重与失败重试）
             paper_title = paper_meta.title or chunk.paper_id or "Untitled"
+            chunk_hash = chunk.chunk_hash or compute_hash(chunk.content)
             metadata = {
                 "paper_id": chunk.paper_id,
-                "paper_title": paper_title,
+                "title": paper_title,            # 说明书 3.4 字段名
+                "paper_title": paper_title,      # 向后兼容：graphrag 检索读此字段
                 "page_num": chunk.page_num,
                 "section_title": chunk.section_title or "",
                 "char_start": chunk.char_start,
                 "char_end": chunk.char_end,
+                "chunk_hash": chunk_hash,                       # 增量去重依据（任务 2.2）
+                "extraction_status": chunk.extraction_status,   # 失败重试面板（任务 2.3）
+                "chunk_index": idx,
             }
             metadatas.append(metadata)
 
@@ -164,16 +169,16 @@ class VectorStore:
             logger.error(f"生成 embedding 失败: {e}")
             raise
 
-        # 批量添加到 ChromaDB
+        # 批量写入 ChromaDB（upsert 幂等：同 ID 覆盖更新，重复上传不产生重复记录）
         try:
-            collection.add(
+            collection.upsert(
                 ids=ids,
                 documents=documents,
                 metadatas=metadatas,
                 embeddings=embeddings,
             )
             logger.info(
-                f"成功添加 {len(ids)} 个 chunk 到向量存储"
+                f"成功写入 {len(ids)} 个 chunk 到向量存储（upsert 幂等）"
             )
             return len(ids)
         except Exception as e:
@@ -270,6 +275,112 @@ class VectorStore:
         except Exception as e:
             logger.error(f"删除 chunks 失败: {e}")
             raise
+
+    def get_existing_chunk_hashes(self, paper_id: str) -> Set[str]:
+        """
+        获取某论文已入库的 chunk_hash 集合（供增量去重判断，任务 2.2）。
+
+        重复上传同一论文时，内容未变的 chunk 其 SHA256 不变，
+        据此可跳过 LLM 抽取，直接复用已有结果。
+        """
+        collection = self._get_collection()
+        try:
+            results = collection.get(where={"paper_id": paper_id})
+            if not results or not results.get("metadatas"):
+                return set()
+            return {
+                m.get("chunk_hash")
+                for m in results["metadatas"]
+                if m and m.get("chunk_hash")
+            }
+        except Exception as e:
+            logger.warning(f"读取已有 chunk_hash 失败（按无存量处理）: {e}")
+            return set()
+
+    def get_chunks_by_paper(self, paper_id: str) -> List[Dict[str, Any]]:
+        """
+        获取某论文全部 chunk 及抽取状态（供失败重试面板展示，任务 2.3）。
+
+        返回字段: chunk_id / content / preview / page_num / section_title /
+                  extraction_status / chunk_hash / metadata
+        """
+        collection = self._get_collection()
+        try:
+            results = collection.get(where={"paper_id": paper_id})
+            if not results or not results.get("ids"):
+                return []
+            chunks = []
+            for i, cid in enumerate(results["ids"]):
+                meta = results["metadatas"][i] if results.get("metadatas") else {}
+                doc = results["documents"][i] if results.get("documents") else ""
+                meta = meta or {}
+                chunks.append(
+                    {
+                        "chunk_id": cid,
+                        "content": doc or "",
+                        "preview": (doc or "").strip().replace("\n", " ")[:120],
+                        "page_num": meta.get("page_num", 0),
+                        "section_title": meta.get("section_title", ""),
+                        "extraction_status": meta.get("extraction_status", "pending"),
+                        "chunk_hash": meta.get("chunk_hash", ""),
+                        "metadata": meta,
+                    }
+                )
+            # 按 chunk_index 排序，保证展示顺序与原文一致
+            chunks.sort(key=lambda c: c["metadata"].get("chunk_index", 0))
+            return chunks
+        except Exception as e:
+            logger.error(f"获取论文 chunks 失败: {e}")
+            return []
+
+    def update_chunk_status(self, chunk_ids: List[str], status: str) -> int:
+        """
+        批量更新 chunk 的抽取状态（重试成功后调用，任务 2.3）。
+
+        参数:
+            chunk_ids: 待更新的 chunk ID 列表
+            status: 目标状态 success / partial / failed / pending
+        返回:
+            成功更新的数量
+        """
+        if not chunk_ids:
+            return 0
+        collection = self._get_collection()
+        try:
+            results = collection.get(
+                ids=chunk_ids,
+                include=["embeddings", "documents", "metadatas"],
+            )
+            if not results or not results.get("ids"):
+                return 0
+
+            keep_ids, keep_docs, keep_metas, keep_embeds = [], [], [], []
+            for i, cid in enumerate(results["ids"]):
+                emb = results["embeddings"][i] if results.get("embeddings") else None
+                if emb is None:
+                    logger.warning(f"chunk {cid} 缺少 embedding，跳过状态更新")
+                    continue
+                meta = dict(results["metadatas"][i] or {})
+                meta["extraction_status"] = status
+                keep_ids.append(cid)
+                keep_docs.append(results["documents"][i])
+                keep_metas.append(meta)
+                keep_embeds.append(emb)
+
+            if not keep_ids:
+                return 0
+
+            collection.upsert(
+                ids=keep_ids,
+                documents=keep_docs,
+                metadatas=keep_metas,
+                embeddings=keep_embeds,
+            )
+            logger.info(f"更新 {len(keep_ids)} 个 chunk 状态为 {status}")
+            return len(keep_ids)
+        except Exception as e:
+            logger.error(f"更新 chunk 状态失败: {e}")
+            return 0
 
     def get_stats(self) -> Dict[str, Any]:
         """获取向量存储统计信息"""

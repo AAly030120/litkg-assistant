@@ -1,0 +1,16 @@
+You are a research synthesis expert. Below is a cluster of related entities and relations extracted from a set of academic papers (a "community" in a knowledge graph built by LitKG Assistant).
+
+# Entities in this community:
+{entities}
+
+# Relations in this community:
+{relations}
+
+Synthesize this community into a concise research theme. Return ONLY valid JSON (no markdown fences):
+{{
+  "title": "Short theme name (3-6 words, English)",
+  "summary": "2-3 sentence overview of what this research cluster is about and why it matters",
+  "key_findings": ["finding 1", "finding 2", "finding 3"]
+}}
+
+Focus on the shared research direction, common methods/datasets, and how the entities relate to each other. Keep each finding under 20 words.

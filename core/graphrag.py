@@ -614,20 +614,114 @@ def _format_cross_paper_answer(result: Dict) -> str:
 # 主问答函数（MVP-1 优化：混合检索）
 # ============================================================
 
-def ask(question: str, kg: KGStore, vector_store: Any = None,
-        paper_ids: List[str] = None) -> Answer:
+def ask_global(question: str, kg: KGStore) -> Answer:
     """
-    基于知识图谱和向量存储回答问题（MVP-1 混合检索）。
+    全局综述问答（复刻微软 GraphRAG Global Search）。
+    基于社区摘要（community reports）对语料级 / 综述性问题做 map-reduce 式合成回答，
+    例如「这些论文的主要研究方向是什么」「各方法之间的关系与演进」。
+
+    要求：先调用 kg.generate_community_reports() 生成社区摘要（离线一次性成本）。
+    若尚未生成，会提示用户先在界面触发「生成社区摘要」。
+    """
+    start_time = time.time()
+
+    reports = kg.get_community_reports().get("communities", {})
+    if not reports:
+        return Answer(
+            question=question,
+            answer="💡 尚未生成社区摘要。请先在「图谱可视化」或「系统概览」页点击「生成社区摘要」"
+                   "（基于社区发现的全局综述问答需要先离线构建主题摘要），之后即可问我"
+                   "「这些论文的主要研究方向是什么」这类综述性问题。",
+            question_type="global",
+            latency_ms=(time.time() - start_time) * 1000,
+        )
+
+    # 相关性打分：问题关键词 vs 社区标题/摘要/发现/实体名
+    kw_info = _extract_keywords(question)
+    kws = [k.lower() for k in kw_info.get("keywords", [])]
+    # 若关键词为空，退化为全部社区参与
+    scored = []
+    for cid, comm in reports.items():
+        text = " ".join([
+            comm.get("title", ""),
+            comm.get("summary", ""),
+            " ".join(comm.get("key_findings", [])),
+            " ".join(comm.get("entity_ids", [])),
+        ]).lower()
+        score = sum(1 for k in kws if k and k in text) if kws else 1
+        scored.append((score, cid, comm))
+
+    # 选 relevant 社区：有关键词则取 top5，否则全部
+    scored.sort(key=lambda x: x[0], reverse=True)
+    if kws:
+        selected = [c for s, _, c in scored if s > 0][:5] or [c for _, _, c in scored[:3]]
+    else:
+        selected = [c for _, _, c in scored[:5]]
+
+    if not selected:
+        selected = [c for _, _, c in scored[:3]]
+
+    # 组装社区报告上下文
+    blocks = []
+    for i, c in enumerate(selected, 1):
+        findings = "\n".join(f"    · {f}" for f in c.get("key_findings", []))
+        blocks.append(
+            f"### Theme {i}: {c.get('title', '')}\n"
+            f"{c.get('summary', '')}\n"
+            f"Key findings:\n{findings}"
+        )
+    community_context = "\n\n".join(blocks)
+
+    prompt_template = _load_prompt("global_search.txt")
+    user_prompt = prompt_template.replace("{community_reports}", community_context).replace(
+        "{question}", question
+    )
+
+    answer_text = ""
+    try:
+        from core.entity_extractor import _call_llm
+        llm_out = _call_llm(
+            [
+                {"role": "system", "content": "You are a senior research analyst."},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=settings.LLM_QA_TEMPERATURE,
+        )
+        answer_text = llm_out.strip()
+    except Exception as e:
+        logger.error(f"全局问答失败: {e}")
+        answer_text = f"抱歉，全局问答生成出错：{str(e)}"
+
+    latency = (time.time() - start_time) * 1000
+    return Answer(
+        question=question,
+        answer=answer_text,
+        question_type="global",
+        latency_ms=latency,
+        hits_entities=sum(len(c.get("entity_ids", [])) for c in selected),
+    )
+
+
+def ask(question: str, kg: KGStore, vector_store: Any = None,
+        paper_ids: List[str] = None, mode: str = "local") -> Answer:
+    """
+    基于知识图谱和向量存储回答问题。
+    支持多模式检索（复刻港大 LightRAG 的双层检索范式）：
+        - "local"  : 局部实体检索（KG 实体 + 向量），适合具体事实 / 特定对象问答
+        - "global" : 全局综述检索（社区摘要 map-reduce），适合宏观主题 / 综述性问题
+        - "hybrid" : 融合两者，既给具体事实也给全局视角
 
     参数:
         question: 用户问题
         kg: 知识图谱存储对象
         vector_store: 向量存储对象（可选，默认使用全局单例）
         paper_ids: 可选，限定检索的论文 ID 列表（用于定向问答）
-
-    返回:
-        Answer 对象
+        mode: 检索模式 local / global / hybrid
     """
+    # 全局模式：走社区摘要综述问答
+    if mode == "global":
+        return ask_global(question, kg)
+
     start_time = time.time()
 
     # Step 1: 混合检索（KG + 向量）
@@ -636,11 +730,25 @@ def ask(question: str, kg: KGStore, vector_store: Any = None,
     question_type = retrieval_result["question_type"]
     keywords = retrieval_result["keywords"]
 
+    # hybrid 模式：叠加全局社区摘要作为宏观上下文
+    if mode == "hybrid":
+        reports = kg.get_community_reports().get("communities", {})
+        if reports:
+            top = sorted(reports.values(), key=lambda c: len(c.get("entity_ids", [])), reverse=True)[:3]
+            g_blocks = []
+            for c in top:
+                g_blocks.append(f"## {c.get('title', '')}\n{c.get('summary', '')}")
+            if g_blocks:
+                merged_context = (
+                    "=== 全局研究主题（社区摘要）===\n" + "\n\n".join(g_blocks)
+                    + "\n\n=== 局部检索结果 ===\n" + merged_context
+                )
+
     # 判断是否是跨论文对比问题
     is_cross_paper = _is_cross_paper_question(question, retrieval_result, kg)
 
     logger.info(
-        f"问答 - 关键词: {keywords}, 问题类型: {question_type}, "
+        f"问答(mode={mode}) - 关键词: {keywords}, 问题类型: {question_type}, "
         f"跨论文: {is_cross_paper}"
     )
 
@@ -662,7 +770,7 @@ def ask(question: str, kg: KGStore, vector_store: Any = None,
     return Answer(
         question=question,
         answer=answer_text,
-        question_type=question_type,
+        question_type=f"{mode}/{question_type}",
         source_entities=retrieval_result["kg_entities"],
         source_triples=retrieval_result["kg_triples"],
         latency_ms=latency,

@@ -81,6 +81,11 @@ class Settings:
     KG_HOPS: int = int(os.getenv("KG_HOPS", "2"))  # KG 检索跳数
     VECTOR_WEIGHT: float = float(os.getenv("VECTOR_WEIGHT", "0.5"))  # 向量检索权重（0~1）
 
+    # ========== 社区发现 + 全局综述问答（GraphRAG 核心，复刻微软 GraphRAG）==========
+    COMMUNITY_MIN_SIZE: int = int(os.getenv("COMMUNITY_MIN_SIZE", "3"))  # 低于此规模的社区不单独生成摘要
+    COMMUNITY_REPORTS_PATH: str = os.getenv("COMMUNITY_REPORTS_PATH", "data/communities.json")
+    COMMUNITY_RANDOMNESS: float = float(os.getenv("COMMUNITY_RANDOMNESS", "0.15"))  # Louvain 随机种子抖动
+
     @property
     def kg_json_abs_path(self) -> Path:
         """KG JSON 的绝对路径"""
@@ -110,6 +115,11 @@ class Settings:
     def vector_db_dir_abs_path(self) -> Path:
         """向量数据库目录的绝对路径"""
         return PROJECT_ROOT / self.VECTOR_DB_DIR
+
+    @property
+    def community_reports_abs_path(self) -> Path:
+        """社区摘要 JSON 的绝对路径"""
+        return PROJECT_ROOT / self.COMMUNITY_REPORTS_PATH
 
     def validate(self) -> list[str]:
         """

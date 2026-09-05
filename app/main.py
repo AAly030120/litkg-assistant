@@ -174,6 +174,35 @@ div.stButton > button:hover { transform: translateY(-1px); }
     border-radius: 0 8px 8px 0; margin: 6px 0; font-size: 13px; }
 .source-citation .sc-paper { font-weight: 600; color: var(--primary); }
 .source-citation .sc-text { color: var(--text-secondary); }
+
+/* ── Hero 项目介绍卡（简历/Portfolio 呈现优化）── */
+.hero-card { background: linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #3B82F6 100%);
+    border-radius: var(--radius); padding: 28px 32px; color: white;
+    box-shadow: 0 8px 30px rgba(37,99,235,0.25); margin-bottom: 20px;
+    position: relative; overflow: hidden; }
+.hero-card::after { content: ""; position: absolute; top:-40px; right:-40px;
+    width:180px; height:180px; background:rgba(255,255,255,0.08); border-radius:50%; }
+.hero-card .hero-badge { display:inline-block; background:rgba(255,255,255,0.2);
+    padding:3px 12px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:0.5px;
+    margin-bottom:10px; backdrop-filter:blur(4px); }
+.hero-card h1 { font-size:26px; font-weight:800; margin:0 0 6px 0; line-height:1.2; }
+.hero-card p { font-size:14px; opacity:0.9; margin:0 0 16px 0; line-height:1.6; max-width:700px; }
+.hero-tags { display:flex; flex-wrap:wrap; gap:6px; }
+.hero-tag { background:rgba(255,255,255,0.18); padding:4px 12px; border-radius:20px;
+    font-size:11px; font-weight:500; backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.25); }
+
+/* ── Demo 模式提示 ── */
+.demo-banner { background:#FEF3C7; border:1px solid #F59E0B; border-radius:10px;
+    padding:10px 16px; font-size:13px; color:#92400E; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+/* ── About 侧边栏区域 ── */
+.about-box { background:var(--card-bg); border:1px solid var(--border); border-radius:12px;
+    padding:14px; margin-top:12px; }
+.about-box h4 { font-size:13px; font-weight:700; color:var(--text); margin:0 0 8px 0; }
+.about-item { font-size:11px; color:var(--text-secondary); padding:3px 0; }
+.about-stack { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.about-chip { background:var(--primary-bg); color:var(--primary); padding:2px 8px;
+    border-radius:10px; font-size:10px; font-weight:600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -225,6 +254,127 @@ def _log_activity(msg: str):
     acts = _get_activity()
     acts.insert(0, {"time": _t.strftime("%H:%M"), "msg": msg})
     st.session_state["activity_log"] = acts[:20]
+
+# ═══════════════════════════════════════════════
+# Demo 演示数据（预置示例知识图谱，无需 API Key）
+# ═══════════════════════════════════════════════
+def _load_demo_data():
+    """加载预置的 Demo 知识图谱数据，让访客无需 API Key 即可体验完整功能。"""
+    from core.models import Entity, Triple, EntityType, RelationType
+    kg = _get_kg()
+    # 示例论文
+    papers_demo = [
+        Entity(entity_id="demo_p1", entity_type=EntityType.PAPER, name="Attention Is All You Need",
+                properties={"title":"Attention Is All You Need","year":"2017","venue":"NeurIPS","authors":"Vaswani et al."},
+                source_paper_id="demo_p1", source_section="Abstract"),
+        Entity(entity_id="demo_p2", entity_type=EntityType.PAPER, name="BERT: Pre-training of Deep Bidirectional Transformers",
+                properties={"title":"BERT: Pre-training of Deep Bidirectional Transformers","year":"2018","venue":"NAACL","authors":"Devlin et al."},
+                source_paper_id="demo_p2", source_section="Introduction"),
+        Entity(entity_id="demo_p3", entity_type=EntityType.PAPER, name="Graph Attention Networks",
+                properties={"title":"Graph Attention Networks","year":"2018","venue":"ICLR","authors":"Velicovic et al."},
+                source_paper_id="demo_p3", source_section="Method"),
+    ]
+    # 示例实体
+    entities_demo = [
+        Entity(entity_id="demo_e1", entity_type=EntityType.METHOD, name="Self-Attention",
+                properties={"description":"Computes attention weights between all token pairs"},
+                source_paper_id="demo_p1", source_section="3.2 Self-Attention"),
+        Entity(entity_id="demo_e2", entity_type=EntityType.MODEL, name="Transformer",
+                properties={"description":"Architecture based entirely on attention mechanisms","year":"2017"},
+                source_paper_id="demo_p1", source_section="3.1 Model Architecture"),
+        Entity(entity_id="demo_e3", entity_type=EntityType.METHOD, name="Multi-Head Attention",
+                properties={"description":"Runs multiple attention mechanisms in parallel","heads":"8"},
+                source_paper_id="demo_p1", source_section="3.2.2 Multi-Head Attention"),
+        Entity(entity_id="demo_e4", entity_type=EntityType.DATASET, name="WMT 2014 English-to-German",
+                properties={"description":"Machine translation benchmark dataset","size":"4.5M pairs"},
+                source_paper_id="demo_p1", source_section="4. Experiments"),
+        Entity(entity_id="demo_e5", entity_type=EntityType.METRIC, name="BLEU Score",
+                properties={"description":"Bilingual Evaluation Understudy for translation quality"},
+                source_paper_id="demo_p1", source_section="4. Results"),
+        Entity(entity_id="demo_e6", entity_type=EntityType.MODEL, name="BERT",
+                properties={"description":"Bidirectional Encoder Representations from Transformers","layers":"12","hidden":"768"},
+                source_paper_id="demo_p2", source_section="3.1 Architecture"),
+        Entity(entity_id="demo_e7", entity_type=EntityType.TASK, name="Masked Language Modeling",
+                properties={"description":"Predicts masked tokens using bidirectional context"},
+                source_paper_id="demo_p2", source_section="3.1 Task 1"),
+        Entity(entity_id="demo_e8", entity_type=EntityType.METHOD, name="Positional Encoding",
+                properties={"description":"Encodes token position information using sin/cos functions"},
+                source_paper_id="demo_p1", source_section="3.5 Positional Encoding"),
+        Entity(entity_id="demo_e9", entity_type=EntityType.MODEL, name="GAT",
+                properties={"description":"Graph Attention Network for node classification","layers":"2"},
+                source_paper_id="demo_p3", source_section="2.1 GAT Layer"),
+        Entity(entity_id="demo_e10", entity_type=EntityType.AUTHOR, name="Ashish Vaswani",
+                 properties={"affiliation":"Google Brain"}, source_paper_id="demo_p1"),
+    ]
+    # 示例关系（含溯源字段）
+    triples_demo = [
+        Triple(triple_id="demo_t1", relation_type=RelationType.PROPOSES,
+               source_entity_id="demo_p1", target_entity_id="demo_e2",
+               source_entity_name="Attention Is All You Need", target_entity_name="Transformer",
+               confidence=0.95, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch3"]),
+        Triple(triple_id="demo_t2", relation_type=RelationType.USES,
+               source_entity_id="demo_e2", target_entity_id="demo_e1",
+               source_entity_name="Transformer", target_entity_name="Self-Attention",
+               confidence=0.92, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch3_2"]),
+        Triple(triple_id="demo_t3", relation_type=RelationType.BELONGS_TO,
+               source_entity_id="demo_e3", target_entity_id="demo_e1",
+               source_entity_name="Multi-Head Attention", target_entity_name="Self-Attention",
+               confidence=0.88, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch3_2"]),
+        Triple(triple_id="demo_t4", relation_type=RelationType.EVALUATED_ON,
+               source_entity_id="demo_e2", target_entity_id="demo_e4",
+               source_entity_name="Transformer", target_entity_name="WMT 2014 English-to-German",
+               confidence=0.97, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch4"]),
+        Triple(triple_id="demo_t5", relation_type=RelationType.ACHIEVES,
+               source_entity_id="demo_e2", target_entity_id="demo_e5",
+               source_entity_name="Transformer", target_entity_name="BLEU Score",
+               confidence=0.93, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch4_2"],
+               properties={"value": "28.4 BLEU (En-De)"}),
+        Triple(triple_id="demo_t6", relation_type=RelationType.EXTENDS,
+               source_entity_id="demo_e6", target_entity_id="demo_e2",
+               source_entity_name="BERT", target_entity_name="Transformer",
+               confidence=0.91, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p2", source_chunk_ids=["demo_p2::ch3"]),
+        Triple(triple_id="demo_t7", relation_type=RelationType.PROPOSES,
+               source_entity_id="demo_p2", target_entity_id="demo_e7",
+               source_entity_name="BERT", target_entity_name="Masked Language Modeling",
+               confidence=0.94, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p2", source_chunk_ids=["demo_p2::ch3_1"]),
+        Triple(triple_id="demo_t8", relation_type=RelationType.USES,
+               source_entity_id="demo_e2", target_entity_id="demo_e8",
+               source_entity_name="Transformer", target_entity_name="Positional Encoding",
+               confidence=0.89, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch3_5"]),
+        Triple(triple_id="demo_t9", relation_type=RelationType.COMPARED_WITH,
+               source_entity_id="demo_e2", target_entity_id="demo_e9",
+               source_entity_name="Transformer", target_entity_name="GAT",
+               confidence=0.65, llm_model="qwen-turbo", prompt_version="v2",
+               source_paper_id="demo_p3", source_chunk_ids=["demo_p3::ch6"]),
+        Triple(triple_id="demo_t10", relation_type=RelationType.AUTHORED_BY,
+                source_entity_id="demo_p1", target_entity_id="demo_e10",
+                source_entity_name="Attention Is All You Need", target_entity_name="Ashish Vaswani",
+                confidence=0.99, llm_model="qwen-turbo", prompt_version="v2",
+                source_paper_id="demo_p1", source_chunk_ids=["demo_p1::ch0"]),
+    ]
+    # 写入 KG
+    for e in papers_demo + entities_demo:
+        kg.graph.add_node(e.entity_id, entity_type=e.entity_type.value, name=e.name,
+                          properties=e.properties or {}, source_paper_id=e.source_paper_id,
+                          source_chunk_ids=e.source_chunk_ids, source_section=e.source_section)
+    for t in triples_demo:
+        kg.graph.add_edge(t.source_entity_id, t.target_entity_id, relation_type=t.relation_type.value,
+                          triple_id=t.triple_id, source_entity_name=t.source_entity_name,
+                          target_entity_name=t.target_entity_name, source_paper_id=t.source_paper_id,
+                          source_chunk_ids=t.source_chunk_ids, confidence=t.confidence,
+                          llm_model=t.llm_model, prompt_version=t.prompt_version,
+                          created_at=t.created_at)
+    kg._loaded = True
+    st.session_state["demo_data_loaded"] = True
+    st.session_state["is_demo_mode"] = True
 
 def _render_stat_cards(stats):
     cards = [("📄", stats["papers"], "论文数"), ("🧩", stats["entities"], "实体数"),
@@ -278,6 +428,27 @@ with st.sidebar:
         st.markdown(f'<div style="font-size:11px;color:#64748B;padding:2px 0;">'
                     f'{act["time"]} {act["msg"]}</div>', unsafe_allow_html=True)
 
+    # ── About 项目信息（简历/Portfolio 呈现）──
+    st.markdown("---")
+    st.markdown("""<div class="about-box">
+    <h4>🏗️ 关于本项目</h4>
+    <div class="about-item">📌 <b>定位</b>：AI 驱动的文献知识图谱阅读助手</div>
+    <div class="about-item">🎯 <b>核心价值</b>：将非结构化 PDF 论文 → 结构化知识图谱 → 可问答、可探索、可溯源</div>
+    <div class="about-item">⚡ <b>开发方式</b>：Vibe-Coding（AI 辅助全栈开发）</div>
+    <div class="about-stack">
+        <span class="about-chip">Python</span>
+        <span class="about-chip">Streamlit</span>
+        <span class="about-chip">OpenAI API</span>
+        <span class="about-chip">ChromaDB</span>
+        <span class="about-chip">NetworkX</span>
+        <span class="about-chip">PyVis</span>
+        <span class="about-chip">Pydantic</span>
+        <span class="about-chip">PyMuPDF</span>
+    </div>
+    <div class="about-item" style="margin-top:8px;color:#94A3B8;">🔗 <a href="https://github.com/AAly030120/litkg-assistant" target="_blank" style="color:#2563EB;text-decoration:none;">GitHub</a> ·
+    <a href="#" style="color:#2563EB;text-decoration:none;">DEPLOY.md</a></div>
+    </div>""", unsafe_allow_html=True)
+
 page = st.session_state.get("current_page", "papers")
 
 # ═══════════════════════════════════════════════
@@ -322,6 +493,38 @@ if gs:
 # ═══════════════════════════════════════════════
 if page == "papers":
     stats = _get_stats()
+
+    # ═════════════════════════════════════════
+    # Hero 项目介绍卡（简历/Portfolio 呈现）
+    # ═════════════════════════════════════════
+    st.markdown("""
+    <div class="hero-card">
+        <div class="hero-badge">🚀 VIBE-CODING AI PRODUCT</div>
+        <h1>📚 LitKG Assistant</h1>
+        <p>基于 LLM + 知识图谱的智能文献阅读助手。上传 PDF 论文，自动抽取实体与关系构建领域知识图谱，
+        支持 GraphRAG 融合检索问答、实体消歧、增量更新、三元组溯源——让科研文献从「逐篇阅读」升级为「结构化知识探索」。</p>
+        <div class="hero-tags">
+            <span class="hero-tag">🤖 LLM 实体抽取</span>
+            <span class="hero-tag">🕸️ Knowledge Graph</span>
+            <span class="hero-tag">🔍 GraphRAG 融合检索</span>
+            <span class="hero-tag">🧹 三级实体消歧</span>
+            <span class="hero-tag">📦 Chunk 级增量更新</span>
+            <span class="hero-tag">🔗 Triple 溯源</span>
+            <span class="hero-tag">🌐 Streamlit Cloud 部署</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Demo 演示模式开关 ──
+    demo_mode = st.checkbox("🎮 开启 Demo 演示模式（预置示例数据，无需 API Key）", key="demo_mode")
+    if demo_mode:
+        st.markdown("""<div class="demo-banner">💡 <b>Demo 模式已开启</b>：
+        系统已加载预置的示例知识图谱数据，你可以直接体验「智能问答」和「图谱可视化」功能。
+        切换到 💬 智能问答 或 🔬 图谱可视化 页面即可查看效果。</div>""", unsafe_allow_html=True)
+        # 注入 Demo 数据到 session_state
+        if "demo_data_loaded" not in st.session_state:
+            _load_demo_data()
+
     st.markdown('<div class="dashboard-title">📊 系统概览</div>', unsafe_allow_html=True)
     st.markdown('<div class="dashboard-subtitle">基于知识图谱的文献阅读与科研问答平台</div>',
                unsafe_allow_html=True)
@@ -453,18 +656,60 @@ if page == "papers":
                                             # 确保论文标题不空：fallback 到文件名
                                             if not pmeta.title:
                                                 pmeta.title = pinfo.get("filename", pinfo["pid"])
-                                        with st.spinner(f"分块 & AI 抽取…"):
+                                        # ── MVP-2 chunk 级增量更新（说明书 6.8）──
+                                        # 重处理模式已清空该论文实体 → 必须全量重抽；
+                                        # 其余情况按 chunk_hash 复用内容未变的 chunk，仅对新/变更 chunk 调 LLM。
+                                        with st.spinner("分块 & 增量比对…"):
                                             chunks = chunk_paper(pmeta)
-                                            r = extract_entities(chunks)
+                                            force_full = pinfo["is_done"]
+                                            existing_hashes = set()
+                                            if not force_full:
+                                                try:
+                                                    existing_hashes = gvs().get_existing_chunk_hashes(pinfo["pid"])
+                                                except Exception:
+                                                    existing_hashes = set()
+                                            if existing_hashes:
+                                                new_chunks = [c for c in chunks
+                                                              if c.chunk_hash not in existing_hashes]
+                                                # 内容未变的 chunk 直接复用已有抽取结果
+                                                for c in chunks:
+                                                    if c.chunk_hash in existing_hashes:
+                                                        c.extraction_status = "success"
+                                            else:
+                                                new_chunks = chunks
+                                            reused_count = len(chunks) - len(new_chunks)
+
+                                        tip = (f"AI 抽取（复用 {reused_count} 块，新增 {len(new_chunks)} 块）…"
+                                               if reused_count else "AI 抽取…")
+                                        with st.spinner(tip):
+                                            r = extract_entities(new_chunks) if new_chunks else None
+                                            # 成功时 extract_entities 已就地标记 success；
+                                            # failed_chunk_ids 非空表示三级 fallback 全部失败
+                                            if r is not None and getattr(r, "failed_chunk_ids", None):
+                                                for c in new_chunks:
+                                                    c.extraction_status = "failed"
+
                                         with st.spinner("存入知识图谱…"):
                                             kg3 = gks(); kg3.load_from_json()
-                                            kg3.add_paper_batch(r.entities, r.triples)
-                                            kg3.save_to_json()
+                                            if r is not None:
+                                                kg3.add_paper_batch(r.entities, r.triples)
+                                                kg3.save_to_json()
+
+                                        # 仅新/变更 chunk 重新 embedding；复用的 chunk 不重复计费
                                         try:
-                                            vs2 = gvs(); vs2.add_chunks(chunks, pmeta)
+                                            vs2 = gvs()
+                                            if new_chunks:
+                                                vs2.add_chunks(new_chunks, pmeta)
+                                            reused_ids = [c.chunk_id for c in chunks
+                                                          if c.chunk_hash in existing_hashes]
+                                            if reused_ids:
+                                                vs2.update_chunk_status(reused_ids, "success")
                                         except Exception as ve:
                                             st.warning(f"向量索引跳过: {ve}")
-                                        _log_activity(f"✅ 处理《{pmeta.title[:30]}》- {len(r.entities)}实体")
+
+                                        ent_n = len(r.entities) if r is not None else 0
+                                        reuse_tip = f"（增量复用 {reused_count} 块）" if reused_count else ""
+                                        _log_activity(f"✅ 处理《{pmeta.title[:30]}》- {ent_n}实体{reuse_tip}")
                                         st.toast(f"《{pmeta.title}》处理完成", icon="✅")
                                         # 清除缓存 → 立即刷新页面
                                         _get_kg.clear(); _get_vs.clear()
@@ -477,6 +722,61 @@ if page == "papers":
                                     st.markdown(f"**标题**: {pinfo['title']}")
                                     st.markdown(f"**作者**: {pinfo['authors'] or '未知'}")
                                     st.caption(f"文件: {pinfo['filename']}")
+
+                                    # ── MVP-2 失败重试面板（说明书 2.4）──
+                                    # 展示各 chunk 抽取状态，对 failed chunk 提供手动重试
+                                    try:
+                                        from core.vector_store import get_vector_store as _gvs2
+                                        _chunks = _gvs2().get_chunks_by_paper(pinfo["pid"])
+                                    except Exception:
+                                        _chunks = []
+
+                                    if _chunks:
+                                        _ok = sum(1 for c in _chunks if c["extraction_status"] == "success")
+                                        _bad = [c for c in _chunks if c["extraction_status"] == "failed"]
+                                        _pending = [c for c in _chunks if c["extraction_status"] == "pending"]
+                                        st.caption(
+                                            f"抽取进度: {_ok}/{len(_chunks)} 成功"
+                                            + (f" · {len(_bad)} 失败" if _bad else "")
+                                            + (f" · {len(_pending)} 待处理" if _pending else "")
+                                        )
+                                        for _c in _bad[:5]:
+                                            _rk = f"rt_{pid_s}_{_c['chunk_id']}"
+                                            st.markdown(
+                                                f'<div style="font-size:12px;color:#B91C1C;'
+                                                f'margin-bottom:2px;">⚠ P{_c["page_num"]} · '
+                                                f'{_c["preview"][:58]}…</div>',
+                                                unsafe_allow_html=True)
+                                            if st.button("🔁 重试此块", key=_rk, use_container_width=True):
+                                                try:
+                                                    from core.models import TextChunk as _TC
+                                                    from core.kg_store import get_kg_store as _gks2
+                                                    from core.entity_extractor import extract_entities as _ee
+                                                    _tc = _TC(
+                                                        chunk_id=_c["chunk_id"],
+                                                        paper_id=pinfo["pid"],
+                                                        content=_c["content"],
+                                                        chunk_hash=_c["chunk_hash"],
+                                                        page_num=_c["page_num"],
+                                                        section_title=_c["section_title"],
+                                                        extraction_status="pending",
+                                                    )
+                                                    _r = _ee([_tc])
+                                                    if _r is not None and not _r.failed_chunk_ids:
+                                                        _kg = _gks2(); _kg.load_from_json()
+                                                        _kg.add_paper_batch(_r.entities, _r.triples)
+                                                        _kg.save_to_json()
+                                                        _gvs2().update_chunk_status([_c["chunk_id"]], "success")
+                                                        _log_activity(
+                                                            f"🔁 重试成功: {pinfo['filename']} P{_c['page_num']}")
+                                                        st.toast("重试成功", icon="✅")
+                                                        _get_kg.clear(); _get_vs.clear()
+                                                        st.rerun()
+                                                    else:
+                                                        st.error("重试仍失败，请检查 API 配额或网络")
+                                                except Exception as _re:
+                                                    app_logger.error(f"重试失败: {traceback.format_exc()}")
+                                                    st.error(_friendly_error(str(_re)))
                             with bc[2]:
                                 if st.button("🗑", key=f"del_{pid_s}", use_container_width=True):
                                     st.session_state[f"confirm_del_{pid_s}"] = True
@@ -638,6 +938,23 @@ elif page == "qa":
         except Exception:
             selected_pids = []
 
+        # ── 检索模式（复刻港大 LightRAG 的双层检索范式）──
+        st.markdown('<div style="font-size:12px;color:#64748B;margin:10px 0 4px;">'
+                    '🧭 检索模式</div>', unsafe_allow_html=True)
+        qa_mode = st.radio(
+            "检索模式",
+            ["local", "global", "hybrid"],
+            key="qa_mode",
+            label_visibility="collapsed",
+            horizontal=True,
+            help="local=局部实体检索(具体事实)；global=全局综述(社区摘要·需先生成)；hybrid=两者融合",
+        )
+        st.caption({
+            "local": "🔍 **局部**：基于实体/向量的精准检索，适合「某方法用什么数据集」等具体事实。",
+            "global": "🌐 **全局**：基于社区摘要的综述合成，适合「这些论文主要研究什么」等宏观问题。需先在图谱页生成社区摘要。",
+            "hybrid": "🔗 **融合**：同时给出具体事实与全局视角，兼顾细节与主题。",
+        }[qa_mode])
+
         # ── 输入 ──
         q = st.chat_input("请输入您的问题…")
         if q:
@@ -659,7 +976,8 @@ elif page == "qa":
                         try: vs_now = _get_vs()
                         except: pass
                         result = graphrag_ask(q, kg=kg_now, vector_store=vs_now,
-                                               paper_ids=selected_pids if selected_pids else None)
+                                               paper_ids=selected_pids if selected_pids else None,
+                                               mode=qa_mode)
                         answer = result.answer
 
                         # 构建证据数据
@@ -876,6 +1194,28 @@ elif page == "graph":
         if st.button("🔄 刷新图谱", use_container_width=True):
             _get_kg.clear(); st.rerun()
 
+        # ── 社区发现（复刻微软 GraphRAG 的层级社区聚类）──
+        st.markdown("---")
+        st.markdown("#### 🧩 社区与全局综述")
+        if st.button("🔬 生成社区摘要", use_container_width=True,
+                     help="运行 Louvain 社区发现 + LLM 主题摘要，为全局综述问答提供预计算上下文（一次性离线成本）"):
+            with st.spinner("正在社区发现并生成主题摘要（可能需要调用 LLM，请稍候）…"):
+                try:
+                    report = kg_now.generate_community_reports()
+                    n_comm = len(report.get("communities", {}))
+                    st.success(f"✅ 社区摘要已生成（{n_comm} 个主题社区）。"
+                               "现在可在「智能问答」用 global/hybrid 模式问综述性问题。")
+                    _get_kg.clear()
+                except Exception as ce:
+                    app_logger.error(f"社区摘要生成失败: {traceback.format_exc()}")
+                    st.error(f"生成失败：{_friendly_error(str(ce))}")
+
+        color_by_community = st.checkbox(
+            "🌈 按社区着色",
+            value=False,
+            help="开启后节点按社区聚类着色（需先生成社区摘要以写入 community_id）",
+        )
+
         # 路径查询
         st.markdown("---")
         st.markdown("#### 🔎 路径查询")
@@ -953,7 +1293,6 @@ elif page == "graph":
             st.info("需要安装 pyvis: `pip install pyvis`")
         else:
             try:
-                import streamlit.components.v1 as comp
                 from pyvis.network import Network
 
                 # ── 浅色学术配色（按实体类型） ──
@@ -969,6 +1308,13 @@ elif page == "graph":
                     "#EC4899", "#14B8A6", "#EF4444", "#F59E0B",
                 ]
                 SHARED_COLOR = "#6366F1"  # 共享节点：靛紫色
+
+                # 社区聚类配色（按 community_id 取色，复刻 GraphRAG 社区视图）
+                COMMUNITY_COLORS = [
+                    "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6",
+                    "#EC4899", "#14B8A6", "#F97316", "#0EA5E9", "#A855F7",
+                    "#84CC16", "#FF6B6B", "#22D3EE", "#E879F9", "#FACC15",
+                ]
 
                 SIZES = {
                     "Paper": 40, "Author": 20, "Institution": 18,
@@ -999,8 +1345,16 @@ elif page == "graph":
                     et = e.entity_type
                     hl = search_term and search_term.lower() in e.name.lower()
 
-                    # ── 节点颜色：论文聚类模式 vs 类型模式 ──
-                    if selected_pids:
+                    # ── 节点颜色：社区模式 > 论文聚类模式 > 类型模式 ──
+                    if color_by_community:
+                        cid = getattr(e, "community_id", -1)
+                        if cid is None or cid < 0:
+                            color = "#94A3B8"  # 未分配社区：灰
+                            size_boost = 1.0
+                        else:
+                            color = COMMUNITY_COLORS[cid % len(COMMUNITY_COLORS)]
+                            size_boost = 1.1
+                    elif selected_pids:
                         pid_lower = e.source_paper_id.lower()
                         if e.entity_id in shared_eids:
                             color = SHARED_COLOR
@@ -1081,7 +1435,7 @@ elif page == "graph":
 
                 html = net.generate_html()
                 st.markdown('<div class="graph-iframe-container">', unsafe_allow_html=True)
-                comp.html(html, height=840, scrolling=True)
+                st.iframe(srcdoc=html, height=840, scrolling=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 # ── 图例（含共享节点说明） ──
@@ -1114,6 +1468,112 @@ elif page == "graph":
                         st.markdown(f'🔗 <span style="color:{SHARED_COLOR};font-weight:600;">共享节点</span>'
                                     f'（{len(shared_eids)} 个）：多篇论文共有的实体，位于交界处',
                                     unsafe_allow_html=True)
+
+                    # ── 社区着色图例 ──
+                    if color_by_community:
+                        # 统计实际出现的社区
+                        comm_ids = sorted({getattr(e, "community_id", -1)
+                                           for e in filtered
+                                           if getattr(e, "community_id", -1) is not None
+                                           and e.community_id >= 0})
+                        if comm_ids:
+                            st.markdown("---")
+                            st.markdown("##### 🌈 社区（Louvain 聚类）")
+                            cc = st.columns(min(len(comm_ids), 5))
+                            reports = kg_now.get_community_reports().get("communities", {})
+                            for i, cid in enumerate(comm_ids):
+                                ctitle = reports.get(str(cid), {}).get("title", f"社区 {cid}")
+                                with cc[i % 5]:
+                                    st.markdown(
+                                        f'<span style="display:inline-block;width:12px;height:12px;'
+                                        f'border-radius:50%;background:{COMMUNITY_COLORS[cid % len(COMMUNITY_COLORS)]};'
+                                        f'margin-right:4px;vertical-align:middle;"></span>'
+                                        f'<span style="font-size:11px;color:#64748B;" title="{ctitle}">#{cid}</span>',
+                                        unsafe_allow_html=True)
+                            st.caption("颜色对应社区编号；悬停查看社区主题标题。")
+                        else:
+                            st.markdown("---")
+                            st.warning("⚠️ 尚未检测到社区。请先点击「🔬 生成社区摘要」写入 community_id。")
+
+                # ── MVP-2 Triple 溯源检视（说明书「调试」要求）──
+                with st.expander("🔍 三元组溯源（Debug）"):
+                    st.caption(
+                        "查看每条关系的抽取依据：来源片段、置信度、抽取模型与 Prompt 版本。"
+                        "置信度低于 0.70 的关系在问答中会被标注为「待验证」。"
+                    )
+                    only_low = st.checkbox("仅看低置信度（< 0.70）", key="g_low_conf")
+
+                    eid2name = {e.entity_id: e.name for e in entities}
+                    visible_nodes = set(net.get_nodes())
+                    shown = 0
+                    low_total = 0
+
+                    for t in triples_list:
+                        try:
+                            conf = float(t.get("confidence", 1.0) or 1.0)
+                        except (TypeError, ValueError):
+                            conf = 1.0
+                        sid = t.get("source_entity_id", "")
+                        oid = t.get("target_entity_id", "")
+                        if sid not in visible_nodes or oid not in visible_nodes:
+                            continue
+                        if conf < 0.70:
+                            low_total += 1
+                        if only_low and conf >= 0.70:
+                            continue
+                        if shown >= 30:
+                            st.caption("… 仅显示前 30 条，可用上方筛选缩小范围")
+                            break
+
+                        sn = t.get("source_entity_name") or eid2name.get(sid, str(sid)[:8])
+                        tn = t.get("target_entity_name") or eid2name.get(oid, str(oid)[:8])
+                        rel = t.get("relation", "")
+                        rel_disp = RELATION_ZH.get(rel, rel) if lang == "中文" else rel
+
+                        if conf >= 0.85:
+                            badge_bg, badge_fg = "#DCFCE7", "#166534"
+                        elif conf >= 0.70:
+                            badge_bg, badge_fg = "#FEF9C3", "#854D0E"
+                        else:
+                            badge_bg, badge_fg = "#FEE2E2", "#991B1B"
+
+                        st.markdown(
+                            f'<div style="font-size:13px;padding:5px 0;border-bottom:1px solid #F1F5F9;">'
+                            f'{str(sn)[:22]} → <b>{rel_disp}</b> → {str(tn)[:22]}'
+                            f' <span style="background:{badge_bg};color:{badge_fg};'
+                            f'border-radius:6px;padding:1px 6px;font-size:11px;margin-left:4px;">'
+                            f'置信度 {conf:.2f}</span>'
+                            f'{" ⚠ 待验证" if conf < 0.70 else ""}</div>',
+                            unsafe_allow_html=True)
+
+                        chunks = t.get("source_chunk_ids", []) or []
+                        paper_t = paper_map.get(t.get("source_paper_id", ""), "")
+                        detail = []
+                        if paper_t:
+                            detail.append(f"📄 {paper_t}")
+                        if chunks:
+                            detail.append(
+                                f"📎 来源片段 {len(chunks)} 处："
+                                f"{', '.join(str(c)[:12] for c in chunks[:3])}"
+                            )
+                        else:
+                            detail.append("📎 来源片段：未记录")
+                        if t.get("llm_model"):
+                            detail.append(f"🤖 {t['llm_model']}")
+                        if t.get("prompt_version"):
+                            detail.append(f"🏷 Prompt {t['prompt_version']}")
+                        if t.get("created_at"):
+                            detail.append(f"🕐 {str(t['created_at'])[:19]}")
+                        st.caption(" ｜ ".join(detail))
+                        shown += 1
+
+                    if shown == 0:
+                        st.caption("当前筛选条件下没有可显示的关系。")
+                    if low_total:
+                        st.caption(
+                            f"⚠ 共 {low_total} 条低置信度关系，问答中会标注「待验证」，"
+                            f"可考虑对相关论文重新抽取。"
+                        )
 
             except Exception as e:
                 app_logger.error(f"图谱渲染失败: {traceback.format_exc()}")

@@ -383,6 +383,9 @@ def chunk_paper(meta: PaperMeta,
         section_title = _get_section_for_pos(meta.sections, pos, end)
 
         chunk = TextChunk(
+            # chunk_id 按说明书 3.4 规则 "paper_id::chunk_index" 稳定生成。
+            # 保证重复上传 / 重处理时 ID 恒定，配合 upsert 实现写入幂等。
+            chunk_id=f"{meta.paper_id}::{chunk_idx}",
             paper_id=meta.paper_id,
             content=chunk_text,
             chunk_hash=chunk_hash,

@@ -187,10 +187,12 @@ class Entity(BaseModel):
     entity_id: str = Field(default_factory=gen_id)
     entity_type: EntityType
     name: str
+    description: str = ""  # 实体语义描述（GraphRAG/LightRAG 核心：让节点可理解、问答有语义）
     properties: Dict[str, Any] = Field(default_factory=dict)  # 如 year, venue, abstract
     source_paper_id: str = ""
     source_chunk_ids: List[str] = Field(default_factory=list)
     source_section: str = ""  # 实体来源的论文章节（如 "第3章 方法"）
+    community_id: int = -1    # 所属社区 ID（社区发现后填充，默认未分配）
 
 
 class Triple(BaseModel):
@@ -201,11 +203,47 @@ class Triple(BaseModel):
     target_entity_id: str       # 尾实体
     source_entity_name: str = ""  # 头实体名称（便于展示）
     target_entity_name: str = ""  # 尾实体名称（便于展示）
+    description: str = ""       # 关系语义描述（如 "A 提出方法 B，用于解决 X"）
     source_paper_id: str = ""
     source_chunk_ids: List[str] = Field(default_factory=list)
     confidence: float = 1.0
     llm_model: str = ""
     prompt_version: str = "v0"
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class AliasEntry(BaseModel):
+    """
+    实体别名表条目（MVP-2 实体消歧，说明书 3.5）。
+
+    记录「别名文本 → 标准实体」的映射，用于 L2 级消歧，
+    同时保留合并来源与置信度，便于追溯审计。
+    """
+    alias_id: str = Field(default_factory=gen_id)
+    alias_text: str                      # 别名文本（如 "BERT_base"）
+    canonical_entity_id: str             # 指向标准实体 ID
+    entity_type: EntityType              # 实体类型（与 canonical 一致）
+    source: Literal["llm_extraction", "manual_review", "embedding_match"]
+    confidence: float = 1.0
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class PendingReview(BaseModel):
+    """
+    待人工审核的消歧候选（说明书 6.7 待审核队列）。
+
+    同名异义、或相似度处于灰区（未达自动合并阈值）的实体对，
+    不自动合并，入队等待人工在 UI 上决定合并或新建。
+    """
+    review_id: str = Field(default_factory=gen_id)
+    new_entity_id: str = ""
+    new_entity_name: str = ""
+    new_entity_type: str = ""
+    candidate_entity_id: str = ""
+    candidate_entity_name: str = ""
+    similarity: float = 0.0              # 语义相似度
+    reason: str = ""                     # 入队原因
+    status: Literal["pending", "merged", "rejected"] = "pending"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 

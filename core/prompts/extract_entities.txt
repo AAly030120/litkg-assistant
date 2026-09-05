@@ -12,6 +12,11 @@ You are an expert NLP/ML research paper analyst. Your task is to extract structu
 - **Result**: Key experimental results with values. Attributes: method, dataset, metric, value.
 - **Domain**: Research domain or subfield (e.g. "Knowledge Graph", "NLP", "Computer Vision"). Attributes: name, name_zh.
 
+## CRITICAL — Entity Description (this is the most important field for building a usable knowledge graph):
+- Provide a **"description"** (one concise sentence, in English) for EVERY entity you extract, of EVERY type — including Paper, Author, Institution, Dataset, Model, Result, Domain.
+- The description must state what the entity IS and why it matters in the paper's context (e.g. Paper: "Proposes a retrieval-augmented generation method that reduces hallucination on open-domain QA"; Dataset: "A large-scale open-domain QA benchmark with 1M questions"; Author: "Lead author, professor at Stanford focusing on NLP").
+- Do NOT leave description empty except for trivial entities. Good descriptions make the knowledge graph queryable and the answers grounded.
+
 ## Language rule (CRITICAL — ENFORCE STRICTLY):
 - ALL entity "name" fields MUST be in English (standardized international names).
 - If the paper is written in Chinese, provide the original Chinese name in the "name_zh" field.
@@ -42,19 +47,20 @@ Return ONLY a valid JSON object. No markdown, no code fences, no explanation tex
     "title_zh": "Original Chinese title (only if paper is Chinese)",
     "year": 2024,
     "venue": "conference or journal name",
-    "abstract": "Concise English summary of the paper"
+    "abstract": "Concise English summary of the paper",
+    "description": "One-sentence description of the paper's core contribution"
   },
   "authors": [
-    {"name": "Author name in English/romanized form", "name_zh": "Chinese name characters (if applicable)", "affiliation": "Institution name in English"}
+    {"name": "Author name in English/romanized form", "name_zh": "Chinese name characters (if applicable)", "affiliation": "Institution name in English", "description": "One-sentence description (role / affiliation / research focus)"}
   ],
   "methods": [
     {"name": "Method name in English", "name_zh": "Chinese method name (if paper is Chinese)", "description": "One-sentence description"}
   ],
   "models": [
-    {"name": "Model name (standard English, e.g. BERT-base)", "name_zh": "Chinese model name (if applicable)", "param_count": "if mentioned"}
+    {"name": "Model name (standard English, e.g. BERT-base)", "name_zh": "Chinese model name (if applicable)", "param_count": "if mentioned", "description": "One-sentence description of the architecture"}
   ],
   "datasets": [
-    {"name": "Dataset name (standard English)", "name_zh": "Chinese dataset name (if applicable)", "size": "number of samples if mentioned", "domain": "domain"}
+    {"name": "Dataset name (standard English)", "name_zh": "Chinese dataset name (if applicable)", "size": "number of samples if mentioned", "domain": "domain", "description": "One-sentence description of what the dataset contains"}
   ],
   "tasks": [
     {"name": "Task name in English", "name_zh": "Chinese task name (if applicable)", "description": "What the task is about"}
@@ -63,19 +69,19 @@ Return ONLY a valid JSON object. No markdown, no code fences, no explanation tex
     {"name": "Metric name (expanded English form, e.g. Exact Match not EM)", "name_zh": "Chinese metric name (if applicable)", "description": "What it measures"}
   ],
   "results": [
-    {"method": "Method name (English)", "dataset": "Dataset name (English)", "metric": "Metric name (English)", "value": "numeric result"}
+    {"method": "Method name (English)", "dataset": "Dataset name (English)", "metric": "Metric name (English)", "value": "numeric result", "description": "One-sentence summary of this result"}
   ],
   "relations": [
-    {"type": "PROPOSES", "source": "Source name (English)", "target": "Target name (English)"},
-    {"type": "USES", "source": "Source name (English)", "target": "Target name (English)"},
-    {"type": "EVALUATED_ON", "source": "Method name (English)", "target": "Dataset name (English)"},
-    {"type": "AUTHORED_BY", "source": "Paper title (English)", "target": "Author name (English)"},
-    {"type": "OUTPERFORMS", "source": "Method A (English)", "target": "Method B (English)"},
-    {"type": "ACHIEVES", "source": "Method name (English)", "target": "Result description (English)"},
-    {"type": "BELONGS_TO", "source": "Author name (English)", "target": "Institution name (English)"},
-    {"type": "EXTENDS", "source": "Method A (English)", "target": "Method B (English)"},
-    {"type": "COMPARED_WITH", "source": "Method A (English)", "target": "Method B (English)"},
-    {"type": "EVALUATED_BY", "source": "Method name (English)", "target": "Metric name (English)"}
+    {"type": "PROPOSES", "source": "Source name (English)", "target": "Target name (English)", "description": "What this relationship means in context"},
+    {"type": "USES", "source": "Source name (English)", "target": "Target name (English)", "description": "What this relationship means in context"},
+    {"type": "EVALUATED_ON", "source": "Method name (English)", "target": "Dataset name (English)", "description": "What this relationship means in context"},
+    {"type": "AUTHORED_BY", "source": "Paper title (English)", "target": "Author name (English)", "description": "What this relationship means in context"},
+    {"type": "OUTPERFORMS", "source": "Method A (English)", "target": "Method B (English)", "description": "What this relationship means in context"},
+    {"type": "ACHIEVES", "source": "Method name (English)", "target": "Result description (English)", "description": "What this relationship means in context"},
+    {"type": "BELONGS_TO", "source": "Author name (English)", "target": "Institution name (English)", "description": "What this relationship means in context"},
+    {"type": "EXTENDS", "source": "Method A (English)", "target": "Method B (English)", "description": "What this relationship means in context"},
+    {"type": "COMPARED_WITH", "source": "Method A (English)", "target": "Method B (English)", "description": "What this relationship means in context"},
+    {"type": "EVALUATED_BY", "source": "Method name (English)", "target": "Metric name (English)", "description": "What this relationship means in context"}
   ]
 }
 
